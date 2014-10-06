@@ -65,16 +65,20 @@ go gen pt eta = do
         py = pt * sin phi
     return (px,py,pz)  
 
+lheXML :: String -> String
+lheXML str = "<LesHouchesEvents version=\"3.0\">\n<init>\n      -11       11  0.70000000000E+04  0.70000000000E+04 0 0       0       0 3   1\n  0.88308027210E-03  0.72579022363E-06  0.88308000000E-07   0\n<generator name='MadGraph5_aMC@NLO' version='#5.2.1.2'>please cite 1405.0301 </generator>\n</init>\n"
+              ++ str ++ "</LesHouchesEvents>\n"
+
 eventXML :: String -> String
-eventXML str = "<event>\n" ++ str ++ "\n</event>"
+eventXML str = "<event>\n" ++ str ++ "\n</event>\n"
 
 genEvent :: ((Double,Double, Double) -> LHEvent) 
-            ->  MTGen -> Double -> Double -> IO () -- B.ByteString
+            ->  MTGen -> Double -> Double -> IO String -- () -- B.ByteString
 genEvent evgen gen pt eta = do
     -- phi <- (2.0 * pi *) <$> random gen :: IO Double    
-    plst <- sequence (replicate 100 (go gen pt eta))
+    plst <- sequence (replicate 10000 (go gen pt eta))
     let evts = map evgen plst
-    mapM_ (putStrLn . eventXML . formatLHEvent) evts
+    (return . concatMap eventXML . map formatLHEvent) evts
 
 
 testlhe :: (Double,Double,Double) -> LHEvent
@@ -84,7 +88,8 @@ main :: IO ()
 main = do
   putStrLn "standard candle lhe"
   gen <- newMTGen Nothing
-  genEvent testlhe gen 100 1.0
+  str <- genEvent testlhe gen 100 1.0
+  putStrLn (lheXML str)
   -- putStrLn $ formatLHEvent (testlhe (200,300,600))
 
 
